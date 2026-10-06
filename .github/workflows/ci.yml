@@ -1,0 +1,22 @@
+name: Python CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: python -m pip install Flask==3.1.2 pytest==8.4.2
+
+      - name: Build check
+        run: python -m compileall -q app.py
+
+      - name: Run tests
+        run: python -m pytest -v
