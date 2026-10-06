@@ -45,16 +45,25 @@ def home():
             <title>Gym Crowd Tracker</title>
             <link rel="icon" href="data:,">
         </head>
+
         <body>
             <h1>Gym Crowd Tracker</h1>
+
             <h2>Current Crowd Count: {{ crowd_count }}</h2>
 
-            <form action="{{ url_for('check_in') }}" method="post" style="display:inline">
+            <form action="{{ url_for('check_in') }}" method="post"
+                  style="display:inline">
                 <button type="submit">Check In</button>
             </form>
 
-            <form action="{{ url_for('check_out') }}" method="post" style="display:inline">
-                <button type="submit" {% if crowd_count == 0 %}disabled{% endif %}>Check Out</button>
+            <form action="{{ url_for('check_out') }}" method="post"
+                  style="display:inline">
+                <button
+                    type="submit"
+                    {% if crowd_count == 0 %}disabled{% endif %}
+                >
+                    Check Out
+                </button>
             </form>
         </body>
         </html>
@@ -64,8 +73,11 @@ def home():
 @app.route("/check-in", methods=["POST"])
 def check_in():
     connection = get_db_connection()
+
     try:
-        connection.execute("INSERT INTO check_ins (active) VALUES (1)")
+        connection.execute(
+            "INSERT INTO check_ins (active) VALUES (1)"
+        )
         connection.commit()
     finally:
         connection.close()
@@ -76,11 +88,18 @@ def check_in():
 @app.route("/check-out", methods=["POST"])
 def check_out():
     connection = get_db_connection()
+
     try:
-        connection.execute(
-            "UPDATE check_ins SET active = 0 "
-            "WHERE id = (SELECT id FROM check_ins WHERE active = 1 LIMIT 1)"
-        )
+        connection.execute("""
+            UPDATE check_ins
+            SET active = 0
+            WHERE id = (
+                SELECT id
+                FROM check_ins
+                WHERE active = 1
+                LIMIT 1
+            )
+        """)
         connection.commit()
     finally:
         connection.close()
@@ -89,6 +108,7 @@ def check_out():
 
 
 init_db()
+
 
 if __name__ == "__main__":
     app.run(debug=True)

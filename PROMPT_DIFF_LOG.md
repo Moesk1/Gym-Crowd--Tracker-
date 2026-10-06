@@ -62,3 +62,24 @@ Changes After Review:
 
 Final Result:
 The final architecture decision record is saved in `docs/adr/ADR-001.md`.
+## Walking Skeleton and CI
+
+### AI Tool
+GitHub Copilot
+
+### Prompt
+Help me create a simple end-to-end walking skeleton for my Gym Crowd Tracker using Flask, SQLite, pytest, and GitHub Actions. The app should allow a user to check in and check out, store the data, and display the current crowd count.
+
+### AI Output
+GitHub Copilot helped with the Flask routes, SQLite storage, testing, and GitHub Actions CI setup.
+
+### Changes After Review
+- Kept the application simple and focused on the gym crowd count.
+- Used SQLite for real data storage instead of mock data.
+- Added Check In and Check Out functionality.
+- Added a test to verify the application works.
+- Added GitHub Actions to automatically run the test.
+- Did not add extra features that were outside the current milestone.
+
+### Final Result
+The app now has a working end-to-end path from the webpage to Flask, SQLite storage, and back to the webpage. The GitHub Actions CI workflow also runs successfully.
