@@ -1,3 +1,4 @@
+
 from flask import Flask, redirect, render_template_string, url_for
 import sqlite3
 from pathlib import Path
@@ -14,6 +15,7 @@ def get_db_connection():
 
 def init_db():
     connection = get_db_connection()
+
     try:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS check_ins (
@@ -26,13 +28,20 @@ def init_db():
         connection.close()
 
 
+def get_crowd_count(connection):
+    count = connection.execute(
+       "SELECT COUNT(*) FROM check_ins WHERE active = 1"
+    ).fetchone()[0]
+
+    return count
+
+
 @app.route("/")
 def home():
     connection = get_db_connection()
+
     try:
-        crowd_count = connection.execute(
-            "SELECT COUNT(*) FROM check_ins WHERE active = 1"
-        ).fetchone()[0]
+        crowd_count = get_crowd_count(connection)
     finally:
         connection.close()
 
@@ -51,17 +60,15 @@ def home():
 
             <h2>Current Crowd Count: {{ crowd_count }}</h2>
 
-            <form action="{{ url_for('check_in') }}" method="post"
-                  style="display:inline">
+            <form action="{{ url_for('check_in') }}"
+                  method="post" style="display:inline">
                 <button type="submit">Check In</button>
             </form>
 
-            <form action="{{ url_for('check_out') }}" method="post"
-                  style="display:inline">
-                <button
-                    type="submit"
-                    {% if crowd_count == 0 %}disabled{% endif %}
-                >
+            <form action="{{ url_for('check_out') }}"
+                  method="post" style="display:inline">
+                <button type="submit"
+                    {% if crowd_count == 0 %}disabled{% endif %}>
                     Check Out
                 </button>
             </form>
