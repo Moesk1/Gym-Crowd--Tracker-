@@ -30,7 +30,7 @@ def init_db():
 
 def get_crowd_count(connection):
     count = connection.execute(
-       "SELECT COUNT(*) FROM check_ins WHERE active = 1"
+        "SELECT COUNT(*) FROM check_ins WHERE active = 1"
     ).fetchone()[0]
 
     return count

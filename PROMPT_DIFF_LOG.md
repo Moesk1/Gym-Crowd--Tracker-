@@ -83,3 +83,46 @@ GitHub Copilot helped with the Flask routes, SQLite storage, testing, and GitHub
 
 ### Final Result
 The app now has a working end-to-end path from the webpage to Flask, SQLite storage, and back to the webpage. The GitHub Actions CI workflow also runs successfully.
+
+## Testing and Bug-Injection Milestone
+
+### AI Tool
+ChatGPT
+
+### Prompt
+Help me write acceptance tests and unit tests for my Gym Crowd Tracker using Flask, SQLite, and pytest. Help me generate a coverage report and prove that my tests can catch a realistic bug.
+
+### AI Assistance
+AI helped me expand my original test suite from 1 test to 8 tests. It also helped me separate the crowd-counting logic into its own function.
+
+### Changes Made
+- Added tests for checking in and checking out.
+- Added a test for checking out when the gym is empty.
+- Tested multiple check-ins and refreshing the webpage.
+- Added unit tests for the crowd-counting function.
+- Used real temporary SQLite databases instead of mock data.
+- Generated a code coverage report using pytest-cov.
+
+### Bug-Injection Demonstration
+I intentionally changed one line in the crowd-counting function.
+
+Original code:
+`SELECT COUNT(*) FROM check_ins WHERE active = 1`
+
+Buggy code:
+`SELECT COUNT(*) FROM check_ins WHERE active = 0`
+
+This caused the application to count inactive records instead of active check-ins.
+
+### Test Results
+Before injecting the bug: 8 tests passed.
+
+After injecting the bug: 5 tests failed and 3 passed.
+
+After fixing the bug: All 8 tests passed again.
+
+### What I Learned
+This demonstration showed that my tests can catch a real counting mistake. I learned that passing tests are important, but it is also important to prove that the tests fail when the application behaves incorrectly.
+
+### Final Result
+The application has acceptance tests, counting-function tests, a coverage report, and evidence showing that the test suite detects an intentionally introduced bug.
