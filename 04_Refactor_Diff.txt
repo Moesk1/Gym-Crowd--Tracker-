@@ -1,0 +1,70 @@
+diff --git a/app.py b/app.py
+index c64e665..4e34f76 100644
+--- a/app.py
++++ b/app.py
+@@ -36,6 +36,16 @@ def get_crowd_count(connection):
+     return count
+ 
+ 
++def execute_write(sql):
++    connection = get_db_connection()
++
++    try:
++        connection.execute(sql)
++        connection.commit()
++    finally:
++        connection.close()
++
++
+ @app.route("/")
+ def home():
+     connection = get_db_connection()
+@@ -79,37 +89,23 @@ def home():
+ 
+ @app.route("/check-in", methods=["POST"])
+ def check_in():
+-    connection = get_db_connection()
+-
+-    try:
+-        connection.execute(
+-            "INSERT INTO check_ins (active) VALUES (1)"
+-        )
+-        connection.commit()
+-    finally:
+-        connection.close()
++    execute_write("INSERT INTO check_ins (active) VALUES (1)")
+ 
+     return redirect(url_for("home"))
+ 
+ 
+ @app.route("/check-out", methods=["POST"])
+ def check_out():
+-    connection = get_db_connection()
+-
+-    try:
+-        connection.execute("""
+-            UPDATE check_ins
+-            SET active = 0
+-            WHERE id = (
+-                SELECT id
+-                FROM check_ins
+-                WHERE active = 1
+-                LIMIT 1
+-            )
+-        """)
+-        connection.commit()
+-    finally:
+-        connection.close()
++    execute_write("""
++        UPDATE check_ins
++        SET active = 0
++        WHERE id = (
++            SELECT id
++            FROM check_ins
++            WHERE active = 1
++            LIMIT 1
++        )
++    """)
+ 
+     return redirect(url_for("home"))
+ 

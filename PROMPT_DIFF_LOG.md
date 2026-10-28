@@ -126,3 +126,43 @@ This demonstration showed that my tests can catch a real counting mistake. I lea
 
 ### Final Result
 The application has acceptance tests, counting-function tests, a coverage report, and evidence showing that the test suite detects an intentionally introduced bug.
+
+## Refactoring Milestone
+
+### AI Tool
+ChatGPT
+
+### Prompt Summary
+Help me refactor repeated database code without changing how my Gym Crowd Tracker works, and verify the same tests pass before and after.
+
+### AI Assistance and Changes
+ChatGPT helped review the repeated SQLite write code and verify the refactor. The Check In and Check Out routes repeated the steps for opening a connection, executing SQL, committing, and closing the connection. I replaced those repeated steps with one execute_write(sql) helper.
+
+### What I Kept
+I kept the same SQL operations, routes, redirects, and crowd-counting behavior. I left test_app.py unchanged.
+
+### Verification
+All eight tests passed before the refactor, and the same eight passed afterward. The SHA-256 hashes of the original and final test files matched exactly.
+
+### What Became Easier
+The routes are shorter and easier to follow. If I need to change how database writes are handled, I can update the helper instead of repeating the change in both routes.
+
+## Refactoring Milestone
+
+### AI Tool
+ChatGPT
+
+### Prompt Summary
+Help me refactor repeated database code without changing how my Gym Crowd Tracker works, and verify the same tests pass before and after.
+
+### AI Assistance and Changes
+ChatGPT helped review the repeated SQLite write code and verify the refactor. The Check In and Check Out routes repeated the steps for opening a connection, executing SQL, committing, and closing the connection. I replaced those repeated steps with one execute_write(sql) helper.
+
+### What I Kept
+I kept the same SQL operations, routes, redirects, and crowd-counting behavior. I left test_app.py unchanged.
+
+### Verification
+All eight tests passed before the refactor, and the same eight passed afterward. The SHA-256 hashes of the original and final test files matched exactly.
+
+### What Became Easier
+The routes are shorter and easier to follow. If I need to change how database writes are handled, I can update the helper instead of repeating the change in both routes.
