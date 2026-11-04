@@ -146,3 +146,34 @@ All eight tests passed before the refactor, and the same eight passed afterward.
 
 ### What Became Easier
 The routes are shorter and easier to follow. If I need to change how database writes are handled, I can update the helper instead of repeating the change in both routes.
+
+## M8 — Structured Logging and Runbook
+
+### AI Tool
+ChatGPT
+
+### Prompt Summary
+Help me add structured JSON logging and unique request IDs to my Gym Crowd Tracker Flask application without changing its existing behavior. Also help me create an incident runbook.
+
+### AI Assistance
+ChatGPT helped add JSON logging, request tracking, and a runbook for troubleshooting application failures.
+
+### Changes Made
+- Added a structured JSON logger with consistent fields.
+- Added unique request IDs using UUIDs.
+- Logged request starts, completions, check-ins, check-outs, and crowd-count views.
+- Added an X-Request-ID response header.
+- Created RUNBOOK.md with investigation, recovery, verification, and escalation instructions.
+- Saved sample JSON logs in M8_Sample_Logs.jsonl.
+
+### Diff Summary
+The main changes were made in app.py. Logging functions and Flask request hooks were added while preserving the existing database operations and routes. RUNBOOK.md and M8_Sample_Logs.jsonl were added as supporting documentation and evidence.
+
+### Verification
+All eight existing pytest tests passed after the changes. The sample log contains three JSON records for one request, and all three share the same request_id.
+
+### What I Kept
+I kept the original SQLite database operations, check-in and check-out functionality, and existing tests unchanged.
+
+### What I Learned
+Structured logging makes it easier to trace requests and investigate failures. The runbook provides instructions that another person can follow when the application has a problem.

@@ -1,0 +1,3 @@
+{"timestamp": "2026-11-04T18:43:45.255598+00:00", "level": "INFO", "event": "request_started", "request_id": "e1e4087c-f063-4a04-8e67-174131eed2ca", "method": "GET", "path": "/"}
+{"timestamp": "2026-11-04T18:43:45.256386+00:00", "level": "INFO", "event": "crowd_count_viewed", "request_id": "e1e4087c-f063-4a04-8e67-174131eed2ca", "method": "GET", "path": "/", "crowd_count": 4}
+{"timestamp": "2026-11-04T18:43:45.257943+00:00", "level": "INFO", "event": "request_completed", "request_id": "e1e4087c-f063-4a04-8e67-174131eed2ca", "method": "GET", "path": "/", "status_code": 200}
