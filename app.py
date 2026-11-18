@@ -16,10 +16,7 @@ COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 MODERATE_CROWD_AT = int(os.getenv("MODERATE_CROWD_AT", "10"))
 VERY_BUSY_CROWD_AT = int(os.getenv("VERY_BUSY_CROWD_AT", "25"))
 
-UOFM_LOGO_URL = (
-    "https://www.memphis.edu/_resources/images/logos/"
-    "leaping_tiger_full_color_white-text.png"
-)
+UOFM_LOGO_URL = "https://www.memphis.edu/logo/elements/images/academic2.png"
 
 # Structured JSON logging setup.
 logger = logging.getLogger("gym_crowd_tracker")
