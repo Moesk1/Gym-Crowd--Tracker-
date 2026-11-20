@@ -5,7 +5,7 @@ import os
 import sqlite3
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 app = Flask(__name__)
@@ -13,12 +13,16 @@ app = Flask(__name__)
 DATABASE = Path(__file__).parent / "gym.db"
 VISITOR_COOKIE = "gym_visitor_id"
 COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
+CHECK_IN_TTL_HOURS = int(os.getenv("CHECK_IN_TTL_HOURS", "6"))
 MODERATE_CROWD_AT = int(os.getenv("MODERATE_CROWD_AT", "10"))
 VERY_BUSY_CROWD_AT = int(os.getenv("VERY_BUSY_CROWD_AT", "25"))
 
-UOFM_LOGO_URL = "https://www.memphis.edu/logo/elements/images/academic2.png"
+# Official UofM lockup served by the University of Memphis website.
+UOFM_LOGO_URL = (
+    "https://www.memphis.edu/_resources/images/logos/"
+    "leaping_tiger_full_color_white-text.png"
+)
 
-# Structured JSON logging setup.
 logger = logging.getLogger("gym_crowd_tracker")
 logger.setLevel(logging.INFO)
 logger.propagate = False
@@ -101,8 +105,30 @@ def get_db_connection():
     return connection
 
 
+def expire_stale_check_ins(connection, now=None):
+    """Retire abandoned visits so stale prototype data cannot inflate the count."""
+    current_time = now or datetime.now(timezone.utc)
+    cutoff = current_time - timedelta(hours=CHECK_IN_TTL_HOURS)
+
+    cursor = connection.execute(
+        """
+        UPDATE check_ins
+        SET active = 0,
+            checked_out_at = COALESCE(checked_out_at, ?)
+        WHERE active = 1
+          AND (
+            checked_in_at IS NULL
+            OR checked_in_at < ?
+          )
+        """,
+        (current_time.isoformat(), cutoff.isoformat()),
+    )
+    connection.commit()
+    return cursor.rowcount
+
+
 def init_db():
-    """Create the database and apply small backwards-compatible migrations."""
+    """Create the database and apply backwards-compatible migrations."""
     connection = get_db_connection()
 
     try:
@@ -140,23 +166,33 @@ def init_db():
             """
         )
         connection.commit()
+
+        # Old development rows did not have timestamps. They cannot represent a
+        # trustworthy current visit, so retire them on startup.
+        expire_stale_check_ins(connection)
     finally:
         connection.close()
 
 
 def get_crowd_count(connection):
+    """Count only timestamped, active check-ins."""
     return connection.execute(
-        "SELECT COUNT(*) FROM check_ins WHERE active = 1"
+        """
+        SELECT COUNT(*)
+        FROM check_ins
+        WHERE active = 1
+          AND checked_in_at IS NOT NULL
+        """
     ).fetchone()[0]
 
 
 def get_crowd_level(crowd_count):
-    """Return the prototype crowd level and short student guidance."""
+    """Return a simple crowd label based on active student-reported check-ins."""
     if crowd_count >= VERY_BUSY_CROWD_AT:
         return {
             "label": "Very Busy",
             "slug": "very-busy",
-            "guidance": "Expect a busy gym. If your schedule is flexible, consider visiting later.",
+            "guidance": "A lot of students are currently checked in. If your schedule is flexible, consider visiting later.",
         }
     if crowd_count >= MODERATE_CROWD_AT:
         return {
@@ -164,10 +200,16 @@ def get_crowd_level(crowd_count):
             "slug": "moderate",
             "guidance": "There is a noticeable crowd, but you should still have options.",
         }
+    if crowd_count == 0:
+        return {
+            "label": "No Active Check-ins",
+            "slug": "empty",
+            "guidance": "No students are currently checked in through the tracker.",
+        }
     return {
         "label": "Not Busy",
         "slug": "not-busy",
-        "guidance": "The gym looks relatively quiet based on active student check-ins.",
+        "guidance": "The gym looks relatively quiet based on current student check-ins.",
     }
 
 
@@ -179,7 +221,9 @@ def get_student_check_in_status(connection, visitor_id):
         """
         SELECT id
         FROM check_ins
-        WHERE visitor_id = ? AND active = 1
+        WHERE visitor_id = ?
+          AND active = 1
+          AND checked_in_at IS NOT NULL
         LIMIT 1
         """,
         (visitor_id,),
@@ -200,10 +244,22 @@ def execute_write(sql, parameters=()):
 
 def get_status_message(status):
     messages = {
-        "checked-in": ("success", "You’re checked in. Thanks for helping other Tigers see the crowd."),
-        "checked-out": ("success", "You’re checked out. Your visit is no longer included in the count."),
-        "already-in": ("warning", "You’re already checked in, so the crowd count was not changed."),
-        "not-in": ("warning", "You aren’t currently checked in, so the crowd count was not changed."),
+        "checked-in": (
+            "success",
+            "You’re checked in. Thanks for helping other Tigers see the current crowd.",
+        ),
+        "checked-out": (
+            "success",
+            "You’re checked out. Your visit is no longer included in the count.",
+        ),
+        "already-in": (
+            "warning",
+            "You’re already checked in, so the count was not changed.",
+        ),
+        "not-in": (
+            "warning",
+            "You aren’t currently checked in, so the count was not changed.",
+        ),
     }
     return messages.get(status)
 
@@ -217,13 +273,21 @@ def home():
 
     connection = get_db_connection()
     try:
+        expired_count = expire_stale_check_ins(connection)
         crowd_count = get_crowd_count(connection)
         is_checked_in = get_student_check_in_status(connection, visitor_id)
     finally:
         connection.close()
 
+    if expired_count:
+        log_event("stale_checkins_expired", expired_count=expired_count)
+
     crowd_level = get_crowd_level(crowd_count)
-    meter_percent = min(100, round((crowd_count / VERY_BUSY_CROWD_AT) * 100))
+    meter_percent = (
+        0
+        if crowd_count == 0
+        else min(100, round((crowd_count / VERY_BUSY_CROWD_AT) * 100))
+    )
     status_message = get_status_message(request.args.get("status"))
 
     log_event(
@@ -242,6 +306,7 @@ def home():
             meter_percent=meter_percent,
             moderate_at=MODERATE_CROWD_AT,
             very_busy_at=VERY_BUSY_CROWD_AT,
+            check_in_ttl_hours=CHECK_IN_TTL_HOURS,
             status_message=status_message,
             uofm_logo_url=UOFM_LOGO_URL,
         )
@@ -275,8 +340,8 @@ def check_in():
                 (visitor_id, now),
             )
         else:
-            # Backwards-compatible path for non-browser/legacy callers that do not
-            # yet have the anonymous visitor cookie issued by the homepage.
+            # Compatibility path for direct/test clients that have not loaded
+            # the homepage and therefore do not yet have the browser cookie.
             execute_write(
                 "INSERT INTO check_ins (active, checked_in_at) VALUES (1, ?)",
                 (now,),
@@ -310,7 +375,6 @@ def check_out():
             (now, visitor_id),
         )
     else:
-        # Keep the original route behavior for legacy callers without a cookie.
         changed = execute_write(
             """
             UPDATE check_ins
@@ -343,7 +407,11 @@ def health():
         finally:
             connection.close()
     except sqlite3.Error as error:
-        log_event("health_check_failed", level="ERROR", error_type=type(error).__name__)
+        log_event(
+            "health_check_failed",
+            level="ERROR",
+            error_type=type(error).__name__,
+        )
         return jsonify({"status": "error", "database": "unavailable"}), 503
 
     return jsonify({"status": "ok", "database": "ok"})
