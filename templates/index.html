@@ -11,7 +11,9 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <img class="uofm-logo" src="{{ uofm_logo_url }}" alt="The University of Memphis">
+      <a class="brand-lockup" href="https://www.memphis.edu/" aria-label="University of Memphis home">
+        <img class="uofm-logo" src="{{ uofm_logo_url }}" alt="The University of Memphis">
+      </a>
       <span class="prototype-badge">Student Prototype</span>
     </div>
   </header>
@@ -21,7 +23,7 @@
       <p class="eyebrow">Campus Recreation</p>
       <h1 id="page-title">Gym Crowd Tracker</h1>
       <p class="hero-copy">
-        Check the crowd before you go, then help other Tigers by checking in when you arrive and out when you leave.
+        See how many students are currently checked in before you make the trip, then help other Tigers by checking in when you arrive and checking out when you leave.
       </p>
     </section>
 
@@ -31,12 +33,19 @@
       </div>
     {% endif %}
 
-    <section class="dashboard" aria-label="Current gym crowd status">
+    <section class="dashboard" aria-label="Current gym check-in status">
       <article class="crowd-card">
         <div class="card-heading">
           <div>
-            <p class="card-label">Live crowd</p>
-            <p class="count" aria-label="{{ crowd_count }} people currently checked in">{{ crowd_count }}</p>
+            <p class="card-label">Current student check-ins</p>
+            <p class="count" aria-label="{{ crowd_count }} students currently checked in">{{ crowd_count }}</p>
+            <p class="count-caption">
+              {% if crowd_count == 1 %}
+                1 student is currently checked in
+              {% else %}
+                {{ crowd_count }} students are currently checked in
+              {% endif %}
+            </p>
             <p class="legacy-count">Current Crowd Count: {{ crowd_count }}</p>
           </div>
           <div class="status-pill status-{{ crowd_level.slug }}">
@@ -45,20 +54,23 @@
           </div>
         </div>
 
-        <div class="meter" aria-label="Crowd meter">
+        <div class="meter" aria-label="Student-reported crowd meter">
           <div class="meter-track">
-            <span class="meter-fill" style="width: {{ meter_percent }}%"></span>
+            <span class="meter-fill meter-fill-{{ crowd_level.slug }}" style="width: {{ meter_percent }}%"></span>
           </div>
           <div class="meter-labels">
-            <span>Quiet</span>
-            <span>Busy</span>
+            <span>Quieter</span>
+            <span>Busier</span>
           </div>
         </div>
 
         <p class="guidance">{{ crowd_level.guidance }}</p>
-        <p class="threshold-note">
-          Prototype levels: Moderate at {{ moderate_at }} active check-ins, very busy at {{ very_busy_at }}.
-        </p>
+
+        <div class="data-note">
+          <strong>Community reported.</strong>
+          This number comes only from students who use this tracker. It is not a sensor count or an official UofM occupancy total.
+          Active visits automatically expire after {{ check_in_ttl_hours }} hours if someone forgets to check out.
+        </div>
       </article>
 
       <article class="action-card">
@@ -66,7 +78,7 @@
         {% if is_checked_in %}
           <h2>You’re checked in</h2>
           <p class="action-copy">
-            Remember to check out when you leave so the crowd count stays useful for everyone.
+            Your visit is included in the student-reported count. Check out when you leave so the number stays useful for everyone.
           </p>
           <form action="{{ url_for('check_out') }}" method="post">
             <button class="button button-secondary" type="submit">Check Out</button>
@@ -74,35 +86,40 @@
         {% else %}
           <h2>You’re not checked in</h2>
           <p class="action-copy">
-            At the gym now? Check in with one tap. This browser remembers your active visit.
+            At the gym now? Check in with one tap. This browser remembers your active visit and prevents duplicate check-ins.
           </p>
           <form action="{{ url_for('check_in') }}" method="post">
             <button class="button button-primary" type="submit">Check In</button>
           </form>
         {% endif %}
+
+        <div class="privacy-note">
+          <span aria-hidden="true">●</span>
+          No name, camera, GPS, or student ID is required by this prototype.
+        </div>
       </article>
     </section>
 
     <section class="info-grid" aria-label="How the tracker works">
       <article>
         <span class="info-number">1</span>
-        <h3>Check in</h3>
-        <p>Tap once when you arrive. Duplicate check-ins from the same browser are blocked.</p>
+        <h3>Check in when you arrive</h3>
+        <p>Your browser gets one anonymous visit identity, so the same browser cannot inflate the count by checking in repeatedly.</p>
       </article>
       <article>
         <span class="info-number">2</span>
-        <h3>See the crowd</h3>
-        <p>The count and crowd level are based on active student check-ins stored by the app.</p>
+        <h3>Use the count as a signal</h3>
+        <p>The crowd level is an estimate based on active student check-ins, not an official facility headcount.</p>
       </article>
       <article>
         <span class="info-number">3</span>
-        <h3>Check out</h3>
-        <p>Tap again when you leave so other students see a more accurate number.</p>
+        <h3>Check out when you leave</h3>
+        <p>Your visit is removed immediately when you check out, and abandoned visits expire automatically.</p>
       </article>
     </section>
 
     <p class="prototype-note">
-      Student-built prototype. This is not an official University of Memphis service.
+      Student-built prototype for academic use. This is not an official University of Memphis service.
     </p>
   </main>
 </body>
